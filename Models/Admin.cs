@@ -6,10 +6,10 @@ using System.Web;
 
 namespace S6L1.Models
 {
-    public class Author
+    public class Admin
     {
         [Key]
-        public int AuthorId { get; set; }
+        public int AdminId { get; set; }
 
         [Required(ErrorMessage = "Nome Utente Obbligatorio")]
         [StringLength(20, MinimumLength = 3, ErrorMessage = "Min 3 e max 20 caratteri")]

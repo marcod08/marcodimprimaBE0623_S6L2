@@ -1,6 +1,8 @@
 ﻿using S6L1.Models;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
@@ -13,29 +15,46 @@ namespace S6L1.Controllers
         // GET: Login
         public ActionResult Index()
         {
-            return View();
+            if (HttpContext.User.Identity.IsAuthenticated)
+                return RedirectToAction("UserPanel");
+                return View();
         }
 
         [HttpPost]
-        public ActionResult Index(Author author) 
+        public ActionResult Index(Admin admin)
         {
-            var hasValidCredentials = false;
+            string connectString = ConfigurationManager.ConnectionStrings["DeliveryDb"].ToString();
+            var conn = new SqlConnection(connectString);
+            conn.Open();
+            var command = new SqlCommand("Select * From AdminUser Where Username = @username AND Password = @password", conn);
+            command.Parameters.AddWithValue("@username", admin.Username);
+            command.Parameters.AddWithValue("@password", admin.Password);
+            var reader = command.ExecuteReader();
 
-            // qui inserire la logica per controllare username e pass nel database
-            hasValidCredentials = true;
-
-            if (hasValidCredentials)
+            if (reader.HasRows)
             {
-                FormsAuthentication.SetAuthCookie(author.AuthorId.ToString(), true);
-                return RedirectToAction("", ""); // collegamento alla pagina del pannello
+                reader.Read();
+                FormsAuthentication.SetAuthCookie(reader["Id"].ToString(), true);
+                return RedirectToAction("UserPanel", "Login");
             }
-            return RedirectToAction("Index");
 
+            return RedirectToAction("Index");
         }
+
         [Authorize]
-        public ActionResult Home()
+        public ActionResult UserPanel()
         {
+            var Id = HttpContext.User.Identity.Name;
+            ViewBag.Id = Id; 
             return View();
+        }
+
+        [Authorize, HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Logout()
+        {
+            FormsAuthentication.SignOut();
+            return RedirectToAction("Index", "Home");
         }
     }
 }
